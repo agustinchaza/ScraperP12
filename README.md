@@ -19,6 +19,8 @@ scrapy crawl pagina12
 
 Este comando buscará artículos relacionados con la palabra clave definida en el archivo config.json.
 
+Los datos se obtendran en el archivo output.csv
+
 ### 3. Búsqueda personalizada
 Si deseas buscar artículos sobre un tema específico, puedes pasar la palabra clave como argumento:
 
