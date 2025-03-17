@@ -1,0 +1,2 @@
+scrapy
+Twisted==22.10.0
