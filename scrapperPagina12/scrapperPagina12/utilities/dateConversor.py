@@ -1,11 +1,12 @@
+from datetime import datetime
+
 # Diccionario para convertir los nombres de los meses
 meses = {
     "enero": "01", "febrero": "02", "marzo": "03", "abril": "04", "mayo": "05", "junio": "06",
     "julio": "07", "agosto": "08", "septiembre": "09", "octubre": "10", "noviembre": "11", "diciembre": "12"
 }
 
-
-def convertirFecha2Iso(fecha):
+def convertirFecha2Datetime(fecha):
     try:
         # Limpiar la fecha de caracteres extraños y convertir todo a minúsculas
         fecha_original = fecha  # Guardar la fecha original
@@ -26,10 +27,20 @@ def convertirFecha2Iso(fecha):
         if not mes_num:
             raise ValueError(f"Mes no válido: {mes}")
 
-        # Crear la fecha en formato ISO
-        fecha_iso = f"{anio}-{mes_num}-{dia.zfill(2)}"
+        # Convertir a objeto datetime.date
+        fecha_datetime = datetime.strptime(f"{anio}-{mes_num}-{dia.zfill(2)}", "%Y-%m-%d").date()
 
-        return fecha_iso
+        return fecha_datetime
     except Exception as e:
-        # Devolver la fecha original con el mensaje de error
-        return f"Error al convertir la fecha '{fecha_original}': {e}"
+        # Devolver None y el mensaje de error
+        print(f"Error al convertir la fecha '{fecha_original}': {e}")
+        return None
+
+"""# Ejemplo de uso
+fecha = "3 de marzo de 2024"
+print(convertirFecha2Datetime(fecha))  # Salida: 2024-03-03
+fechaLimite= "01-01-2000"
+fechaLimite = datetime.strptime(fechaLimite, "%d-%m-%Y").date()
+print(fechaLimite)  # Salida: 2000-01-01
+#tipo de dato:
+"""

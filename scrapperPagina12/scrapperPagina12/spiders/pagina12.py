@@ -1,9 +1,10 @@
+from datetime import datetime
 import os
 import random
 import time
 
 import scrapy
-from scrapperPagina12.utilities.dateConversor import convertirFecha2Iso
+from scrapperPagina12.utilities.dateConversor import convertirFecha2Datetime
 from scrapperPagina12.utilities.lectorJSON import cargar_configuracion
 
 
@@ -29,6 +30,12 @@ class Pagina12Spider(scrapy.Spider):
 
         # Definir la consulta de búsqueda, si no se pasa, usa el valor por defecto
         self.search_query = search_query or config.get("default_search_query", "economia")
+        self.fechaLimite = config.get("fecha_limite", "01-01-2000")
+        self.fechaLimite = datetime.strptime(self.fechaLimite, "%d-%m-%Y").date()
+
+        #flag para saber si se debe seguir buscando o ya se encontro la fecha limite
+        self.encontrado = False
+
 
         # Establecer la URL inicial para la búsqueda
         self.start_urls = [f"https://www.pagina12.com.ar/buscar?q={self.search_query}"]
@@ -43,7 +50,7 @@ class Pagina12Spider(scrapy.Spider):
 
         # Extraer el enlace a la siguiente página, si existe
         next_page = response.css("a.next::attr(href)").get()
-        if next_page:
+        if next_page and not self.encontrado:
             next_page_url = response.urljoin(next_page)  # Crear URL completa para la siguiente página
             yield scrapy.Request(url=next_page_url, callback=self.parse)  # Realizar la solicitud a la siguiente página
 
@@ -61,22 +68,28 @@ class Pagina12Spider(scrapy.Spider):
         descripcion = self.extract_text(article, './/p/a/text()')
         fecha = self.extract_text(article, './/div[contains(@class, "date")]/text()')
         imagen = self.extract_text(article, './/img/@src')
-        autor = self.extract_autor(article)
+        #autor = self.extract_autor(article)
 
         datos = {
             "titulo": titulo,
             "url": url,
             "descripcion": descripcion,
-            "fecha": convertirFecha2Iso(fecha),  # Convertir la fecha a formato ISO
+            "fecha": convertirFecha2Datetime(fecha),  # Convertir la fecha a formato ISO
             "imagen": imagen,
-            "autor": autor,
+            "autor": None,
         }
 
-        if autor is None:
-            return response.follow(url, self.extract_autor_by_url, meta={'datos': datos})
+        # Verificar si la fecha del artículo es mayor a la fecha límite
+        if datos["fecha"] > self.fechaLimite:
+            # Extraer el autor y la fecha de la URL del artículo
+            return response.follow(url, self.extract_autor_y_fecha_by_url, meta={'datos': datos})
+        else:
+            #se debe devolver el map vacio
+            self.encontrado = True
+            #return {}
 
         # Retornar los datos del artículo como un diccionario
-        return datos
+        #return datos
 
     def extract_text(self, article, xpath_query, default=None):
         """
@@ -108,13 +121,15 @@ class Pagina12Spider(scrapy.Spider):
 
         return result.strip() if result else default
 
-    def extract_autor_by_url(self, response):
+    def extract_autor_y_fecha_by_url(self, response):
         """
         Extrae el nombre del autor del artículo a partir de la URL del artículo.
         """
         datos = response.meta["datos"]
 
         datos["autor"] = response.xpath('//div[contains(@class, "author-name")]/text()').get()
+        fecha_iso = response.xpath('//time/@datetime').get()
+        datos["fecha"] = fecha_iso
         if datos["autor"]:
             datos["autor"] = datos["autor"].strip().replace('Por', '').strip()
         yield datos
