@@ -63,8 +63,7 @@ class Pagina12Spider(scrapy.Spider):
         imagen = self.extract_text(article, './/img/@src')
         autor = self.extract_autor(article)
 
-        # Retornar los datos del artículo como un diccionario
-        return {
+        datos = {
             "titulo": titulo,
             "url": url,
             "descripcion": descripcion,
@@ -72,6 +71,12 @@ class Pagina12Spider(scrapy.Spider):
             "imagen": imagen,
             "autor": autor,
         }
+
+        if autor is None:
+            return response.follow(url, self.extract_autor_by_url, meta={'datos': datos})
+
+        # Retornar los datos del artículo como un diccionario
+        return datos
 
     def extract_text(self, article, xpath_query, default=None):
         """
@@ -96,17 +101,28 @@ class Pagina12Spider(scrapy.Spider):
         result = article.xpath(
             './/div[contains(@class, "author")]//a/text() | .//div[contains(@class, "date")]/text()').get()
 
-        # Verifica si el autor tiene un formato incorrecto o múltiple, y lo limpia
+        # Verifica si el autor tiene un formato incorrecto  y lo limpia
         if result and result.count(" de ") > 1:
-            print(result)  # Para depurar
-            result = " "  # Asignar un valor vacío si hay más de un "de" en el autor
+            # print(result)  # Para depurar
+            result = ""  # Asignar un valor vacío si hay más de un "de" en el autor
 
         return result.strip() if result else default
+
+    def extract_autor_by_url(self, response):
+        """
+        Extrae el nombre del autor del artículo a partir de la URL del artículo.
+        """
+        datos = response.meta["datos"]
+
+        datos["autor"] = response.xpath('//div[contains(@class, "author-name")]/text()').get()
+        if datos["autor"]:
+            datos["autor"] = datos["autor"].strip().replace('Por', '').strip()
+        yield datos
 
     def closed(self, reason):
         """
         Se ejecuta cuando el Spider termina su ejecución. Aquí puedes agregar estadísticas o logs.
         """
         pass
-        stats = self.crawler.stats.get_stats()
-        print(stats)
+        # stats = self.crawler.stats.get_stats()
+        # print(stats)
