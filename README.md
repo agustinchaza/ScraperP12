@@ -17,7 +17,7 @@ Para ejecutar el scraper, usa el siguiente comando:
 
 scrapy crawl pagina12
 
-Este comando buscará artículos relacionados con la palabra clave definida en el archivo config.json.
+Este comando buscará artículos relacionados con la palabra clave definida en el archivo config.json. desde la fecha actual hasta la fecha definida en el mismo archivo de configuracion
 
 Los datos se obtendran en el archivo output.csv
 
@@ -30,11 +30,15 @@ scrapy crawl pagina12 -a query="tu_palabra_clave"
 Por ejemplo, para buscar artículos sobre educación:
 scrapy crawl pagina12 -a query="educación"
 
+aun no se puede personalizar la fecha limite pasandola como argumento
+
+
 ### 4. Configuración
 Si no se proporciona una palabra clave en la ejecución, el scraper usará la búsqueda por defecto definida en config.json:
 
 {
-  "default_search_query": "economia"
+  "default_search_query": "economia",
+  "fecha_limite": "01-01-2025"
 }
 
 Puedes editar este archivo para cambiar la búsqueda predeterminada.
